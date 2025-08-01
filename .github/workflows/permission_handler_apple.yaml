@@ -28,6 +28,10 @@ jobs:
     # should be moved back to `macos-latest` when GitHub Actions images are updated.
     runs-on: macos-15
 
+    strategy:
+      matrix:
+        dependency-manager: [cocoapods, spm]
+
     env:
       source-directory: ./permission_handler_apple
       example-directory: ./permission_handler_apple/example
@@ -57,7 +61,17 @@ jobs:
         run: flutter analyze
         working-directory: ${{env.source-directory}}
 
+      # Configure dependency manager
+      - name: Configure dependency manager
+        run: |
+          if [ "${{ matrix.dependency-manager }}" = "spm" ]; then
+            flutter config --enable-swift-package-manager
+            cd ${{env.example-directory}}/ios && rm -rf Podfile Podfile.lock Pods
+          else
+            flutter config --no-enable-swift-package-manager
+          fi
+
       # Build iOS version of the example App
-      - name: Run iOS build
+      - name: Run iOS build (${{ matrix.dependency-manager }})
         run: flutter build ios --no-codesign --release
         working-directory: ${{env.example-directory}}
